@@ -11,6 +11,6 @@ export const generateHashForPassword = async (password) =>{
     }
 }
 
-export const checkPassword = async (userPassword, hash) => {
-    return await bcrypt.compare(userPassword, hash);
+export const checkPassword = async (userPassword, dbPassword) => {
+    return await bcrypt.compare(userPassword, dbPassword);
 }
