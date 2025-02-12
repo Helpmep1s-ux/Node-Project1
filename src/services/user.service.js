@@ -1,4 +1,5 @@
 import { prisma } from "../db/index.js";
+import { generateJwtToken } from "../libs/jwt.utils.js";
 import { checkPassword, generateHashForPassword } from "../libs/password.util.js";
 
 export const getAllUsersService = async ()=>{
@@ -25,7 +26,10 @@ export const registerUserService = async (registerUserData)=>{
             password:true
         }
     })
-    return {message: "Registered Successfully."};
+
+    const token = await generateJwtToken(res.id);
+
+    return {message: "Registered Successfully.",res,token};
 }
 
 export const loginUserService = async (loginData)=>{
@@ -42,16 +46,33 @@ export const loginUserService = async (loginData)=>{
     if(!user){
         throw new Error("Invalid Credentials.",{cause: "CustomError"});
     }
-        const hashPass = user.password;
-        const isPasswordSame = await checkPassword(password, hashPass);
-        if(!isPasswordSame){
-            throw new Error("Invalid Credentials.",{cause: "CustomError"});
-        }
-        delete user.password;
-            return {message: "Login Successfull.",user};
-}
 
+    const hashPass = user.password;
+    
+    const isPasswordSame = await checkPassword(password, hashPass);
+    
+    if(!isPasswordSame){
+       throw new Error("Invalid Credentials.",{cause: "CustomError"});
+    }
+
+    const token = await generateJwtToken(user.id);
+
+    delete user.password;
+   return {message: "Login Successfull.",user,token};
+}
+                         
 export const  deleteAllUsersService = async (userData)=>{
     console.log(userData);
     return await prisma.user.deleteMany({where:{fullName: userData.fullName}});
+}
+
+export const getUserProfileService = async (userId)=>{
+    const user = await prisma.user.findUnique({
+        where: {
+            id:userId,
+        },omit:{
+            password:true
+        }
+    })
+    return user;
 }
